@@ -11,33 +11,35 @@ import UIKit
 class ToDoListViewController: UITableViewController {
 
     var itemArray = [Item]()
-    
-    // Open way to UserDefaults for persisting data there.
-    let defaults = UserDefaults.standard
-    
+
+    // Get USERS File Data Path
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Item.plist")
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let newItem = Item()
-        newItem.title = "Wash Car"
-        newItem.done = true
-        itemArray.append(newItem)
+
         
-        let newItem1 = Item()
-        newItem1.title = "Dry Car"
-        itemArray.append(newItem1)
+        print(dataFilePath)
         
-        let newItem2 = Item()
-        newItem2.title = "Wax Car"
-        itemArray.append(newItem2)
+//        let newItem = Item()
+//        newItem.title = "Wash Car"
+//        newItem.done = true
+//        itemArray.append(newItem)
+//
+//        let newItem1 = Item()
+//        newItem1.title = "Dry Car"
+//        itemArray.append(newItem1)
+//        
+//        let newItem2 = Item()
+//        newItem2.title = "Wax Car"
+//        itemArray.append(newItem2)
+//
+//        let newItem3 = Item()
+//        newItem3.title = "Drive Car"
+//        itemArray.append(newItem3)
         
-        let newItem3 = Item()
-        newItem3.title = "Drive Car"
-        itemArray.append(newItem3)
-        
-        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
-            itemArray = items
-        }
+        loadItems()
     }
 
     // MARK: Tableview Datasource Methods
@@ -65,7 +67,7 @@ class ToDoListViewController: UITableViewController {
         // set the opposite of the current .done using the "!, not" instead of using if statement
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
     
-        tableView.reloadData()
+       saveItem()
         
         tableView.deselectRow(at: indexPath, animated: true)
         
@@ -88,10 +90,8 @@ class ToDoListViewController: UITableViewController {
             
             self.itemArray.append(newItem)
             
-            // set new Array to UserDefault persistance
-            self.defaults.set(self.itemArray, forKey: "TodoListArray")
-            
-            self.tableView.reloadData()
+            self.saveItem()
+
         }
         
         alert.addTextField { (alertTextField) in
@@ -101,6 +101,34 @@ class ToDoListViewController: UITableViewController {
         alert.addAction(action)
         
         present(alert, animated: true, completion: nil)
+    }
+    
+    func saveItem() {
+    
+    // set new Array to my plist persistance
+    let encoder = PropertyListEncoder()
+    
+    do {
+        let data = try encoder.encode(itemArray)
+        try data.write(to: dataFilePath!)
+    } catch {
+        print("Error encoding items array, \(error)")
+    }
+    
+    self.tableView.reloadData()
+
+    }
+    
+    func loadItems() {
+        
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+            } catch {
+                print("Error decoding item array, \(error)")
+            }
+        }
     }
 }
 
